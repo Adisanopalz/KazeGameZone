@@ -160,10 +160,19 @@
             <h1 id="pageTitle" class="text-3xl md:text-5xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
                 Temukan Game Gratis Terbaik
             </h1>
-            <p class="text-center text-slate-400 mb-8 max-w-2xl mx-auto text-sm md:text-base">
+            <p id="pageDescription" class="text-center text-slate-400 mb-8 max-w-2xl mx-auto text-sm md:text-base">
                 Jelajahi ribuan game gratis untuk PC dan Browser. Dapatkan link resmi langsung dari publisher, legal dan aman.
             </p>
             
+            <div class="flex justify-center gap-2 mb-8">
+                <button onclick="switchMode('free')" id="tabFree" class="px-6 py-2.5 rounded-full bg-kaze-accent text-white font-medium shadow-lg shadow-kaze-accent/30 transition-all transform hover:scale-105">
+                    <i class="fa-solid fa-gift mr-2"></i>Game Gratis
+                </button>
+                <button onclick="switchMode('deals')" id="tabDeals" class="px-6 py-2.5 rounded-full bg-slate-800 text-slate-300 font-medium border border-slate-700 hover:bg-slate-700 transition-all transform hover:scale-105">
+                    <i class="fa-solid fa-tags mr-2"></i>Radar Diskon PC
+                </button>
+            </div>
+
             <div id="controlsContainer" class="flex flex-col md:flex-row gap-4 justify-center items-center bg-kaze-card/50 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
                 <!-- Search Box -->
                 <div class="relative w-full md:w-2/5">
@@ -283,6 +292,8 @@
 
         // State Variables
         let allGames = []; 
+        let allDeals = []; // Data untuk diskon
+        let currentMode = 'free'; // 'free' atau 'deals'
         let currentCategory = 'all';
         let searchQuery = '';
         let currentSort = 'relevance';
@@ -494,6 +505,8 @@
         }
 
         function toggleViewFavorites() {
+            if (currentMode === 'deals') switchMode('free'); // Pindah ke mode free dulu jika di halaman diskon
+
             isShowingFavorites = !isShowingFavorites;
             const btn = document.getElementById('favToggleBtn');
             
@@ -501,14 +514,10 @@
                 btn.classList.add('bg-red-500/20', 'border-red-500/50');
                 btn.classList.remove('bg-slate-800', 'border-slate-700');
                 pageTitle.textContent = "Game Favorit Anda";
-                controlsContainer.classList.add('hidden'); // Hide filters when in favorites
+                controlsContainer.classList.add('hidden'); 
                 
-                // If we don't have games loaded yet (user clicked instantly), fetch them
-                if (allGames.length === 0) {
-                    fetchGames('all');
-                } else {
-                    renderGames();
-                }
+                if (allGames.length === 0) fetchGames('all');
+                else renderGames();
             } else {
                 resetToHome();
             }
@@ -519,19 +528,19 @@
             const btn = document.getElementById('favToggleBtn');
             btn.classList.remove('bg-red-500/20', 'border-red-500/50');
             btn.classList.add('bg-slate-800', 'border-slate-700');
-            pageTitle.textContent = "Temukan Game Gratis Terbaik";
-            controlsContainer.classList.remove('hidden');
+            pageTitle.textContent = currentMode === 'deals' ? "Radar Diskon Game PC" : "Temukan Game Gratis Terbaik";
+            if (currentMode === 'free') controlsContainer.classList.remove('hidden');
             
-            // Reset filters to visual defaults
             searchInput.value = '';
             categoryFilter.value = 'all';
-            sortFilter.value = 'relevance';
+            sortFilter.value = currentMode === 'deals' ? 'dealRating' : 'relevance';
             
             searchQuery = '';
             currentCategory = 'all';
-            currentSort = 'relevance';
+            currentSort = currentMode === 'deals' ? 'dealRating' : 'relevance';
             
-            fetchGames('all');
+            if (currentMode === 'free') fetchGames('all');
+            else renderDeals();
         }
 
         /**
@@ -644,7 +653,8 @@
         // Event Listeners
         const handleSearch = debounce((e) => {
             searchQuery = e.target.value.toLowerCase().trim();
-            renderGames(); 
+            if (currentMode === 'free') renderGames(); 
+            else renderDeals();
         }, 400);
         
         searchInput.addEventListener('input', handleSearch);
@@ -653,13 +663,157 @@
             currentCategory = e.target.value;
             searchInput.value = '';
             searchQuery = '';
-            fetchGames(currentCategory);
+            if (currentMode === 'free') fetchGames(currentCategory);
         });
 
         sortFilter.addEventListener('change', (e) => {
             currentSort = e.target.value;
-            renderGames();
+            if (currentMode === 'free') renderGames();
+            else renderDeals();
         });
+
+        // -----------------------------------------
+        // NEW FEATURE: Game Deals (CheapShark API)
+        // -----------------------------------------
+        function switchMode(mode) {
+            currentMode = mode;
+            const tabFree = document.getElementById('tabFree');
+            const tabDeals = document.getElementById('tabDeals');
+            const catFilter = categoryFilter.parentElement;
+            
+            // Reset state
+            searchInput.value = '';
+            searchQuery = '';
+            isShowingFavorites = false;
+            document.getElementById('favToggleBtn').classList.remove('bg-red-500/20', 'border-red-500/50');
+            document.getElementById('favToggleBtn').classList.add('bg-slate-800', 'border-slate-700');
+            controlsContainer.classList.remove('hidden');
+
+            if (mode === 'free') {
+                // UI styling for Free tab
+                tabFree.className = "px-6 py-2.5 rounded-full bg-kaze-accent text-white font-medium shadow-lg shadow-kaze-accent/30 transition-all transform hover:scale-105";
+                tabDeals.className = "px-6 py-2.5 rounded-full bg-slate-800 text-slate-300 font-medium border border-slate-700 hover:bg-slate-700 transition-all transform hover:scale-105";
+                pageTitle.textContent = "Temukan Game Gratis Terbaik";
+                document.getElementById('pageDescription').textContent = "Jelajahi ribuan game gratis untuk PC dan Browser. Dapatkan link resmi langsung dari publisher, legal dan aman.";
+                
+                catFilter.classList.remove('hidden'); // Show category filter
+                
+                // Update sort options
+                sortFilter.innerHTML = `
+                    <option value="relevance">Relevansi</option>
+                    <option value="az">Abjad (A - Z)</option>
+                    <option value="za">Abjad (Z - A)</option>
+                    <option value="newest">Terbaru (Rilis)</option>
+                `;
+                currentSort = 'relevance';
+                
+                if (allGames.length === 0) fetchGames('all');
+                else renderGames();
+
+            } else {
+                // UI styling for Deals tab
+                tabDeals.className = "px-6 py-2.5 rounded-full bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-500/30 transition-all transform hover:scale-105";
+                tabFree.className = "px-6 py-2.5 rounded-full bg-slate-800 text-slate-300 font-medium border border-slate-700 hover:bg-slate-700 transition-all transform hover:scale-105";
+                pageTitle.textContent = "Radar Diskon Game PC";
+                document.getElementById('pageDescription').textContent = "Pantau diskon game PC dari Steam. Diperbarui secara real-time via CheapShark API!";
+                
+                catFilter.classList.add('hidden'); // Hide category filter for deals
+                
+                // Update sort options for deals
+                sortFilter.innerHTML = `
+                    <option value="dealRating">Rekomendasi Terbaik</option>
+                    <option value="priceAsc">Harga Termurah</option>
+                    <option value="savings">Diskon Terbesar (%)</option>
+                `;
+                currentSort = 'dealRating';
+                
+                if (allDeals.length === 0) fetchDeals();
+                else renderDeals();
+            }
+        }
+
+        async function fetchDeals() {
+            showState('loading');
+            try {
+                // Mengambil deal dari Steam (StoreID = 1) yang diskon & Metacritic > 50
+                const response = await fetch('https://www.cheapshark.com/api/1.0/deals?storeID=1&lowerPrice=0.1&metacritic=50');
+                if (!response.ok) throw new Error('Gagal fetch diskon');
+                
+                allDeals = await response.json();
+                renderDeals();
+            } catch (error) {
+                console.error("Error CheapShark:", error);
+                document.getElementById('errorMessage').textContent = 'Gagal memuat info diskon dari server. Coba beberapa saat lagi.';
+                showState('error');
+            }
+        }
+
+        function renderDeals() {
+            let filteredDeals = allDeals.filter(deal => deal.title.toLowerCase().includes(searchQuery));
+
+            // Sorting Deals
+            if (currentSort === 'priceAsc') {
+                filteredDeals.sort((a, b) => parseFloat(a.salePrice) - parseFloat(b.salePrice));
+            } else if (currentSort === 'savings') {
+                filteredDeals.sort((a, b) => parseFloat(b.savings) - parseFloat(a.savings));
+            } else {
+                // default: dealRating
+                filteredDeals.sort((a, b) => parseFloat(b.dealRating) - parseFloat(a.dealRating));
+            }
+
+            gamesGrid.innerHTML = '';
+
+            if (filteredDeals.length === 0) {
+                showState('empty');
+                return;
+            }
+
+            let htmlString = '';
+            filteredDeals.slice(0, 48).forEach((deal, index) => {
+                const animDelay = index * 50; 
+                const savings = Math.round(parseFloat(deal.savings));
+                
+                htmlString += `
+                    <div class="game-card bg-kaze-card rounded-2xl overflow-hidden border border-slate-700/50 flex flex-col h-full animate-fade-in-up group" 
+                         style="animation-delay: ${animDelay}ms">
+                         
+                        <!-- Image Area -->
+                        <div class="card-image-wrapper relative pt-[45%] overflow-hidden bg-slate-900 border-b border-slate-700/50">
+                            <img src="${deal.thumb}" alt="${deal.title}" 
+                                class="absolute top-0 left-0 w-full h-full object-cover">
+                            
+                            <!-- Discount Badge -->
+                            <div class="absolute top-3 left-3 bg-red-600 text-white text-xs px-2.5 py-1 rounded font-bold shadow-lg shadow-red-600/50">
+                                -${savings}%
+                            </div>
+                            <!-- MetaCritic Badge -->
+                            <div class="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 rounded font-bold shadow-lg">
+                                Skor: ${deal.metacritic}
+                            </div>
+                        </div>
+                        
+                        <!-- Content Area -->
+                        <div class="p-5 flex-grow flex flex-col relative z-20 bg-kaze-card">
+                            <h3 class="text-lg font-bold text-white mb-3 line-clamp-2 group-hover:text-emerald-400 transition-colors">${deal.title}</h3>
+                            
+                            <div class="flex items-end justify-between mt-auto pt-4 border-t border-slate-700/50">
+                                <div>
+                                    <span class="text-slate-500 text-sm line-through block font-medium">$${deal.normalPrice}</span>
+                                    <span class="text-emerald-400 text-2xl font-black block">$${deal.salePrice}</span>
+                                </div>
+                                <a href="https://www.cheapshark.com/redirect?dealID=${deal.dealID}" target="_blank" rel="noopener noreferrer" 
+                                    class="px-4 py-2 bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-300 rounded-lg transition-colors text-sm font-semibold flex items-center border border-slate-600 hover:border-transparent">
+                                    Lihat Deal <i class="fa-solid fa-cart-shopping ml-2 text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            gamesGrid.innerHTML = htmlString;
+            showState('content');
+        }
 
         // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
