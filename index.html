@@ -202,8 +202,6 @@
 
         /**
          * Fetch games from FreeToGame API
-         * We use an open CORS proxy (corsproxy.io) because FreeToGame API
-         * sometimes blocks direct browser requests due to CORS policies.
          */
         async function fetchGames(category = 'all') {
             showState('loading');
@@ -215,32 +213,45 @@
                     apiUrl = `https://www.freetogame.com/api/games?category=${category}`;
                 }
 
-                // Use a CORS proxy to bypass browser restrictions for this prototype
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+                let data = null;
                 
-                const response = await fetch(proxyUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                try {
+                    // Percobaan 1: Fetch langsung (Seringkali gagal karena CORS di browser)
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) throw new Error('Direct fetch failed');
+                    data = await response.json();
+                } catch (error1) {
+                    console.log("Akses langsung diblokir (CORS), mencoba Proxy 1 (AllOrigins)...");
+                    try {
+                        // Percobaan 2: AllOrigins dengan JSON wrapper (Lebih andal menghindari blokir browser)
+                        const proxyUrl1 = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+                        const response1 = await fetch(proxyUrl1);
+                        if (!response1.ok) throw new Error('Proxy 1 failed');
+                        const wrapperData = await response1.json();
+                        data = JSON.parse(wrapperData.contents);
+                    } catch (error2) {
+                        console.log("Proxy 1 gagal, mencoba Proxy 2 (CodeTabs)...");
+                        // Percobaan 3: CodeTabs Proxy sebagai cadangan terakhir
+                        const proxyUrl2 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`;
+                        const response2 = await fetch(proxyUrl2);
+                        if (!response2.ok) throw new Error('Semua proxy gagal');
+                        data = await response2.json();
+                    }
                 }
-                
-                const data = await response.json();
                 
                 // Store the raw data
                 allGames = data;
                 
                 // If API returned an error object instead of an array
-                if (data.status === 0 || !Array.isArray(data)) {
-                    throw new Error(data.status_message || "Gagal mengambil data dari server.");
+                if (!data || data.status === 0 || !Array.isArray(data)) {
+                    throw new Error(data?.status_message || "Gagal mengambil data dari server.");
                 }
 
                 renderGames();
 
             } catch (error) {
                 console.error("Fetch error:", error);
-                errorMessageEl.textContent = error.message === 'Failed to fetch' 
-                    ? 'Gagal terhubung ke server. Periksa koneksi internet Anda atau coba lagi nanti (CORS Proxy mungkin sedang sibuk).' 
-                    : error.message;
+                errorMessageEl.textContent = 'Gagal terhubung ke server FreeToGame. Coba muat ulang halaman, atau gunakan jaringan lain (ISP/VPN).';
                 showState('error');
             }
         }
