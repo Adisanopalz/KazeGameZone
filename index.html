@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KazeGameZone - Portal Game Gratis</title>
+    <!-- Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        kaze: {
+                            dark: '#0f172a',
+                            light: '#1e293b',
+                            accent: '#3b82f6',
+                            hover: '#2563eb'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb; 
+        }
+
+        .game-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Utility to hide elements */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-kaze-light border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-gamepad text-kaze-accent text-3xl"></i>
+                    <span class="font-bold text-2xl tracking-tight text-white">Kaze<span class="text-kaze-accent">Game</span>Zone</span>
+                </div>
+                <div class="hidden md:block">
+                    <p class="text-sm text-slate-400">Direktori Game Free-to-Play Legal</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Header & Controls Section -->
+        <div class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-center">Temukan Game Gratis Terbaik</h1>
+            <p class="text-center text-slate-400 mb-8 max-w-2xl mx-auto">Jelajahi ribuan game gratis untuk PC dan Browser. Dapatkan link resmi langsung dari publisher.</p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <!-- Search Box -->
+                <div class="relative w-full md:w-1/2 lg:w-1/3">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-search text-slate-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" 
+                        class="block w-full pl-10 pr-3 py-3 border border-slate-600 rounded-lg bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-kaze-accent focus:border-transparent transition-colors" 
+                        placeholder="Cari nama game (contoh: shooter, mmo)...">
+                </div>
+
+                <!-- Category Filter -->
+                <div class="w-full md:w-auto relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-filter text-slate-400"></i>
+                    </div>
+                    <select id="categoryFilter" 
+                        class="block w-full pl-10 pr-8 py-3 border border-slate-600 rounded-lg bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-kaze-accent focus:border-transparent appearance-none cursor-pointer">
+                        <option value="all">Semua Kategori</option>
+                        <option value="mmorpg">MMORPG</option>
+                        <option value="shooter">Shooter</option>
+                        <option value="strategy">Strategy</option>
+                        <option value="moba">MOBA</option>
+                        <option value="racing">Racing</option>
+                        <option value="sports">Sports</option>
+                        <option value="social">Social</option>
+                        <option value="sandbox">Sandbox</option>
+                        <option value="open-world">Open World</option>
+                        <option value="survival">Survival</option>
+                    </select>
+                    <!-- Custom select arrow -->
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <i class="fa-solid fa-chevron-down text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- States Container -->
+        <div id="loadingState" class="flex flex-col items-center justify-center py-20 hidden">
+            <div class="loader mb-4"></div>
+            <p class="text-slate-400">Mencari game...</p>
+        </div>
+
+        <div id="errorState" class="text-center py-20 hidden">
+            <i class="fa-solid fa-triangle-exclamation text-red-500 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-white mb-2">Gagal Memuat Data</h3>
+            <p id="errorMessage" class="text-slate-400 mb-4">Terjadi kesalahan saat mengambil data dari API.</p>
+            <button onclick="fetchGames()" class="px-4 py-2 bg-kaze-accent hover:bg-kaze-hover text-white rounded-lg transition-colors">Coba Lagi</button>
+        </div>
+        
+        <div id="emptyState" class="text-center py-20 hidden">
+            <i class="fa-solid fa-ghost text-slate-500 text-5xl mb-4"></i>
+            <h3 class="text-xl font-bold text-white mb-2">Game Tidak Ditemukan</h3>
+            <p class="text-slate-400">Coba gunakan kata kunci atau kategori lain.</p>
+        </div>
+
+        <!-- Game Grid Container -->
+        <div id="gamesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Game cards will be injected here via JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-kaze-light border-t border-slate-700 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-slate-400 text-sm mb-2">
+                &copy; <span id="year"></span> KazeGameZone. Dibuat untuk tujuan prototipe edukasi.
+            </p>
+            <p class="text-slate-500 text-xs">
+                Data game disediakan oleh <a href="https://www.freetogame.com/" target="_blank" rel="noopener noreferrer" class="text-kaze-accent hover:underline">FreeToGame API</a>. 
+                Semua game yang ditampilkan adalah free-to-play dan legal.
+            </p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Update copyright year
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Global Variables
+        let allGames = []; // Store all fetched games
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // DOM Elements
+        const gamesGrid = document.getElementById('gamesGrid');
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const emptyState = document.getElementById('emptyState');
+        const errorMessageEl = document.getElementById('errorMessage');
+
+        /**
+         * Fetch games from FreeToGame API
+         * We use an open CORS proxy (corsproxy.io) because FreeToGame API
+         * sometimes blocks direct browser requests due to CORS policies.
+         */
+        async function fetchGames(category = 'all') {
+            showState('loading');
+            
+            try {
+                // Determine API endpoint based on category
+                let apiUrl = 'https://www.freetogame.com/api/games';
+                if (category !== 'all') {
+                    apiUrl = `https://www.freetogame.com/api/games?category=${category}`;
+                }
+
+                // Use a CORS proxy to bypass browser restrictions for this prototype
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+                
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Store the raw data
+                allGames = data;
+                
+                // If API returned an error object instead of an array
+                if (data.status === 0 || !Array.isArray(data)) {
+                    throw new Error(data.status_message || "Gagal mengambil data dari server.");
+                }
+
+                renderGames();
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                errorMessageEl.textContent = error.message === 'Failed to fetch' 
+                    ? 'Gagal terhubung ke server. Periksa koneksi internet Anda atau coba lagi nanti (CORS Proxy mungkin sedang sibuk).' 
+                    : error.message;
+                showState('error');
+            }
+        }
+
+        /**
+         * Filter and Render games to the DOM
+         */
+        function renderGames() {
+            // Apply local search filtering on the currently loaded category
+            const filteredGames = allGames.filter(game => {
+                const matchesSearch = game.title.toLowerCase().includes(searchQuery) || 
+                                      game.short_description.toLowerCase().includes(searchQuery);
+                return matchesSearch;
+            });
+
+            // Clear current grid
+            gamesGrid.innerHTML = '';
+
+            if (filteredGames.length === 0) {
+                showState('empty');
+                return;
+            }
+
+            // Cap at 40 games for performance on initial render if just searching locally
+            const gamesToRender = filteredGames.slice(0, 40);
+
+            let htmlString = '';
+            gamesToRender.forEach(game => {
+                // Buat icon platform
+                let platformIcon = '<i class="fa-brands fa-windows"></i>';
+                if (game.platform.toLowerCase().includes('browser')) {
+                    platformIcon = '<i class="fa-solid fa-globe"></i>';
+                }
+
+                // Bangun HTML Card
+                htmlString += `
+                    <div class="game-card bg-slate-800 rounded-xl overflow-hidden border border-slate-700 flex flex-col h-full">
+                        <!-- Image Container with fallback -->
+                        <div class="relative pt-[56.25%] overflow-hidden bg-slate-900">
+                            <img src="${game.thumbnail}" alt="${game.title}" 
+                                class="absolute top-0 left-0 w-full h-full object-cover"
+                                onerror="this.onerror=null; this.src='https://placehold.co/600x400/1e293b/3b82f6?text=No+Image';">
+                            <div class="absolute top-2 right-2 bg-kaze-dark bg-opacity-80 backdrop-blur-sm text-xs px-2 py-1 rounded text-white font-semibold">
+                                ${game.genre}
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-5 flex-grow flex flex-col">
+                            <h3 class="text-xl font-bold text-white mb-2 line-clamp-1" title="${game.title}">${game.title}</h3>
+                            <p class="text-slate-400 text-sm mb-4 line-clamp-2 flex-grow">${game.short_description}</p>
+                            
+                            <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-700">
+                                <div class="text-slate-300 text-sm flex items-center gap-2" title="Platform: ${game.platform}">
+                                    ${platformIcon}
+                                </div>
+                                <a href="${game.game_url}" target="_blank" rel="noopener noreferrer" 
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-kaze-accent text-white text-sm font-medium rounded-lg transition-colors duration-300">
+                                    <span>Mainkan</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            gamesGrid.innerHTML = htmlString;
+            showState('content');
+        }
+
+        /**
+         * Helper to manage UI states
+         */
+        function showState(state) {
+            loadingState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            gamesGrid.classList.add('hidden');
+
+            if (state === 'loading') loadingState.classList.remove('hidden');
+            if (state === 'error') errorState.classList.remove('hidden');
+            if (state === 'empty') emptyState.classList.remove('hidden');
+            if (state === 'content') gamesGrid.classList.remove('hidden');
+        }
+
+        /**
+         * Debounce function to delay search execution while typing
+         */
+        function debounce(func, delay) {
+            let timeoutId;
+            return function (...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        }
+
+        // Event Listeners
+        
+        // Search Input (Local filter)
+        const handleSearch = debounce((e) => {
+            searchQuery = e.target.value.toLowerCase().trim();
+            // Don't refetch from API, just filter existing array
+            renderGames(); 
+        }, 300);
+        searchInput.addEventListener('input', handleSearch);
+
+        // Category Filter (Requires API refetch)
+        categoryFilter.addEventListener('change', (e) => {
+            currentFilter = e.target.value;
+            // Clear search when changing category to avoid confusion
+            searchInput.value = '';
+            searchQuery = '';
+            fetchGames(currentFilter);
+        });
+
+        // Initialize App on load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchGames('all');
+        });
+
+    </script>
+</body>
+</html>
