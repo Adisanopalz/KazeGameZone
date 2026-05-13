@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KazeGameZone - Portal Game Gratis</title>
-    <!-- Tailwind CSS untuk styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -21,20 +21,26 @@
                     },
                     colors: {
                         kaze: {
-                            dark: '#0f172a',
+                            dark: '#0b1121',
                             light: '#1e293b',
                             accent: '#3b82f6',
-                            hover: '#2563eb'
+                            hover: '#2563eb',
+                            card: '#161f33'
                         }
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
                     }
                 }
             }
         }
     </script>
+    
     <style>
         body {
-            background-color: #0f172a;
+            background-color: #0b1121;
             color: #f8fafc;
+            overflow-x: hidden;
         }
         
         /* Custom Scrollbar */
@@ -42,7 +48,7 @@
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #1e293b; 
+            background: #0b1121; 
         }
         ::-webkit-scrollbar-thumb {
             background: #3b82f6; 
@@ -52,44 +58,95 @@
             background: #2563eb; 
         }
 
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Card Animations */
         .game-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
         }
         .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 30px -10px rgba(59, 130, 246, 0.4);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        
+        .card-image-wrapper img {
+            transition: transform 0.5s ease;
+        }
+        .game-card:hover .card-image-wrapper img {
+            transform: scale(1.1);
         }
 
+        /* Keyframes for Staggered Entrance */
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0; /* Starts hidden until animation plays */
+        }
+
+        /* Modal Transitions */
+        .modal-enter {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        .modal-content {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: scale(0.9);
+        }
+        .modal-enter .modal-content {
+            transform: scale(1);
+        }
+
+        /* Loading Spinner */
         .loader {
-            border: 4px solid rgba(255, 255, 255, 0.1);
+            border: 4px solid rgba(59, 130, 246, 0.1);
             border-left-color: #3b82f6;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             animation: spin 1s linear infinite;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         
-        /* Utility to hide elements */
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="font-sans antialiased min-h-screen flex flex-col">
+<body class="font-sans antialiased min-h-screen flex flex-col relative">
 
     <!-- Navbar -->
-    <nav class="bg-kaze-light border-b border-slate-700 sticky top-0 z-50">
+    <nav class="glass sticky top-0 z-40 border-b border-slate-700/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-gamepad text-kaze-accent text-3xl"></i>
-                    <span class="font-bold text-2xl tracking-tight text-white">Kaze<span class="text-kaze-accent">Game</span>Zone</span>
+                <!-- Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="resetToHome()">
+                    <div class="relative">
+                        <i class="fa-solid fa-gamepad text-kaze-accent text-3xl relative z-10"></i>
+                        <div class="absolute inset-0 bg-kaze-accent blur-md opacity-50 rounded-full"></div>
+                    </div>
+                    <span class="font-bold text-2xl tracking-tight text-white">Kaze<span class="text-kaze-accent">Game</span></span>
                 </div>
-                <div class="hidden md:block">
-                    <p class="text-sm text-slate-400">Direktori Game Free-to-Play Legal</p>
+                
+                <!-- Nav Actions -->
+                <div class="flex items-center gap-4">
+                    <button id="favToggleBtn" onclick="toggleViewFavorites()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700">
+                        <i class="fa-solid fa-heart text-red-500"></i>
+                        <span class="hidden sm:inline text-sm font-medium">Favoritku</span>
+                        <span id="favCount" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full ml-1">0</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -99,28 +156,32 @@
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
         <!-- Header & Controls Section -->
-        <div class="mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold mb-4 text-center">Temukan Game Gratis Terbaik</h1>
-            <p class="text-center text-slate-400 mb-8 max-w-2xl mx-auto">Jelajahi ribuan game gratis untuk PC dan Browser. Dapatkan link resmi langsung dari publisher.</p>
+        <div class="mb-10 relative z-10">
+            <h1 id="pageTitle" class="text-3xl md:text-5xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+                Temukan Game Gratis Terbaik
+            </h1>
+            <p class="text-center text-slate-400 mb-8 max-w-2xl mx-auto text-sm md:text-base">
+                Jelajahi ribuan game gratis untuk PC dan Browser. Dapatkan link resmi langsung dari publisher, legal dan aman.
+            </p>
             
-            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+            <div id="controlsContainer" class="flex flex-col md:flex-row gap-4 justify-center items-center bg-kaze-card/50 p-4 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
                 <!-- Search Box -->
-                <div class="relative w-full md:w-1/2 lg:w-1/3">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div class="relative w-full md:w-2/5">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-search text-slate-400"></i>
                     </div>
                     <input type="text" id="searchInput" 
-                        class="block w-full pl-10 pr-3 py-3 border border-slate-600 rounded-lg bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-kaze-accent focus:border-transparent transition-colors" 
-                        placeholder="Cari nama game (contoh: shooter, mmo)...">
+                        class="block w-full pl-11 pr-4 py-3 border border-slate-600/80 rounded-xl bg-slate-800/80 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-kaze-accent focus:border-transparent transition-all shadow-inner" 
+                        placeholder="Cari game...">
                 </div>
 
                 <!-- Category Filter -->
-                <div class="w-full md:w-auto relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fa-solid fa-filter text-slate-400"></i>
+                <div class="w-full md:w-1/4 relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-layer-group text-slate-400"></i>
                     </div>
                     <select id="categoryFilter" 
-                        class="block w-full pl-10 pr-8 py-3 border border-slate-600 rounded-lg bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-kaze-accent focus:border-transparent appearance-none cursor-pointer">
+                        class="block w-full pl-11 pr-8 py-3 border border-slate-600/80 rounded-xl bg-slate-800/80 text-white focus:outline-none focus:ring-2 focus:ring-kaze-accent transition-all appearance-none cursor-pointer">
                         <option value="all">Semua Kategori</option>
                         <option value="mmorpg">MMORPG</option>
                         <option value="shooter">Shooter</option>
@@ -128,13 +189,27 @@
                         <option value="moba">MOBA</option>
                         <option value="racing">Racing</option>
                         <option value="sports">Sports</option>
-                        <option value="social">Social</option>
-                        <option value="sandbox">Sandbox</option>
-                        <option value="open-world">Open World</option>
                         <option value="survival">Survival</option>
+                        <option value="anime">Anime</option>
                     </select>
-                    <!-- Custom select arrow -->
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                        <i class="fa-solid fa-chevron-down text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Sort Filter -->
+                <div class="w-full md:w-1/4 relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-sort text-slate-400"></i>
+                    </div>
+                    <select id="sortFilter" 
+                        class="block w-full pl-11 pr-8 py-3 border border-slate-600/80 rounded-xl bg-slate-800/80 text-white focus:outline-none focus:ring-2 focus:ring-kaze-accent transition-all appearance-none cursor-pointer">
+                        <option value="relevance">Relevansi</option>
+                        <option value="az">Abjad (A - Z)</option>
+                        <option value="za">Abjad (Z - A)</option>
+                        <option value="newest">Terbaru (Rilis)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
                         <i class="fa-solid fa-chevron-down text-sm"></i>
                     </div>
                 </div>
@@ -142,96 +217,125 @@
         </div>
 
         <!-- States Container -->
-        <div id="loadingState" class="flex flex-col items-center justify-center py-20 hidden">
-            <div class="loader mb-4"></div>
-            <p class="text-slate-400">Mencari game...</p>
+        <div id="loadingState" class="flex flex-col items-center justify-center py-32 hidden">
+            <div class="loader mb-6 relative">
+                <div class="absolute inset-0 bg-kaze-accent blur-md opacity-20 rounded-full animate-pulse"></div>
+            </div>
+            <p class="text-slate-300 font-medium animate-pulse">Menghubungkan ke database satelit...</p>
         </div>
 
-        <div id="errorState" class="text-center py-20 hidden">
-            <i class="fa-solid fa-triangle-exclamation text-red-500 text-5xl mb-4"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Gagal Memuat Data</h3>
-            <p id="errorMessage" class="text-slate-400 mb-4">Terjadi kesalahan saat mengambil data dari API.</p>
-            <button onclick="fetchGames()" class="px-4 py-2 bg-kaze-accent hover:bg-kaze-hover text-white rounded-lg transition-colors">Coba Lagi</button>
+        <div id="errorState" class="text-center py-20 hidden bg-red-500/10 rounded-2xl border border-red-500/20 max-w-2xl mx-auto">
+            <i class="fa-solid fa-triangle-exclamation text-red-400 text-6xl mb-4"></i>
+            <h3 class="text-2xl font-bold text-white mb-2">Gagal Memuat Data</h3>
+            <p id="errorMessage" class="text-slate-300 mb-6 px-4">Terjadi kesalahan saat mengambil data dari API.</p>
+            <button onclick="fetchGames(currentCategory)" class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors shadow-lg shadow-red-500/30 font-medium">
+                <i class="fa-solid fa-rotate-right mr-2"></i>Coba Lagi
+            </button>
         </div>
         
-        <div id="emptyState" class="text-center py-20 hidden">
-            <i class="fa-solid fa-ghost text-slate-500 text-5xl mb-4"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Game Tidak Ditemukan</h3>
-            <p class="text-slate-400">Coba gunakan kata kunci atau kategori lain.</p>
+        <div id="emptyState" class="text-center py-32 hidden">
+            <div class="relative inline-block mb-6">
+                <i class="fa-solid fa-ghost text-slate-600 text-7xl"></i>
+                <i class="fa-solid fa-magnifying-glass absolute -bottom-2 -right-2 text-kaze-accent text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Tidak Ditemukan</h3>
+            <p class="text-slate-400">Coba kata kunci lain atau periksa daftar favorit Anda.</p>
         </div>
 
         <!-- Game Grid Container -->
-        <div id="gamesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Game cards will be injected here via JavaScript -->
+        <div id="gamesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8">
+            <!-- Game cards injected via JS -->
         </div>
 
     </main>
 
+    <!-- Game Detail Modal Overlay -->
+    <div id="gameModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 p-4">
+        <div class="modal-content bg-slate-800 border border-slate-600 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <!-- Close button -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition-colors backdrop-blur-sm">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div id="modalContentBody" class="flex flex-col md:flex-row">
+                <!-- Modal content injected via JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
-    <footer class="bg-kaze-light border-t border-slate-700 py-6 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-slate-400 text-sm mb-2">
-                &copy; <span id="year"></span> KazeGameZone. Dibuat untuk tujuan prototipe edukasi.
-            </p>
-            <p class="text-slate-500 text-xs">
-                Data game disediakan oleh <a href="https://www.freetogame.com/" target="_blank" rel="noopener noreferrer" class="text-kaze-accent hover:underline">FreeToGame API</a>. 
-                Semua game yang ditampilkan adalah free-to-play dan legal.
-            </p>
+    <footer class="glass border-t border-slate-700/50 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="text-center md:text-left">
+                <div class="font-bold text-xl text-white mb-1">Kaze<span class="text-kaze-accent">Game</span>Zone</div>
+                <p class="text-slate-400 text-sm">&copy; <span id="year"></span> Prototipe Edukasi.</p>
+            </div>
+            <div class="text-center md:text-right text-slate-500 text-xs max-w-sm">
+                Data API: <a href="https://www.freetogame.com/" target="_blank" class="text-kaze-accent hover:text-blue-400 transition-colors">FreeToGame</a>. <br>
+                Hak cipta game dimiliki oleh masing-masing publisher.
+            </div>
         </div>
     </footer>
 
     <!-- JavaScript Logic -->
     <script>
-        // Update copyright year
         document.getElementById('year').textContent = new Date().getFullYear();
 
-        // Global Variables
-        let allGames = []; // Store all fetched games
-        let currentFilter = 'all';
+        // State Variables
+        let allGames = []; 
+        let currentCategory = 'all';
         let searchQuery = '';
+        let currentSort = 'relevance';
+        let isShowingFavorites = false;
+        
+        // Load Favorites from LocalStorage
+        let favoriteIds = JSON.parse(localStorage.getItem('kaze_favorites_v2')) || [];
 
         // DOM Elements
         const gamesGrid = document.getElementById('gamesGrid');
         const searchInput = document.getElementById('searchInput');
         const categoryFilter = document.getElementById('categoryFilter');
+        const sortFilter = document.getElementById('sortFilter');
+        const controlsContainer = document.getElementById('controlsContainer');
+        const pageTitle = document.getElementById('pageTitle');
+        const favCount = document.getElementById('favCount');
         
         const loadingState = document.getElementById('loadingState');
         const errorState = document.getElementById('errorState');
         const emptyState = document.getElementById('emptyState');
-        const errorMessageEl = document.getElementById('errorMessage');
+        
+        const gameModal = document.getElementById('gameModal');
+        const modalContentBody = document.getElementById('modalContentBody');
+
+        // Update Favorites Counter on load
+        updateFavCount();
 
         /**
-         * Fetch games from FreeToGame API
+         * Fetch games logic (with Triple Fallback)
          */
         async function fetchGames(category = 'all') {
             showState('loading');
             
             try {
-                // Determine API endpoint based on category
                 let apiUrl = 'https://www.freetogame.com/api/games';
                 if (category !== 'all') {
-                    apiUrl = `https://www.freetogame.com/api/games?category=${category}`;
+                    apiUrl += `?category=${category}`;
                 }
 
                 let data = null;
                 
                 try {
-                    // Percobaan 1: Fetch langsung (Seringkali gagal karena CORS di browser)
                     const response = await fetch(apiUrl);
                     if (!response.ok) throw new Error('Direct fetch failed');
                     data = await response.json();
-                } catch (error1) {
-                    console.log("Akses langsung diblokir (CORS), mencoba Proxy 1 (AllOrigins)...");
+                } catch (e1) {
                     try {
-                        // Percobaan 2: AllOrigins dengan JSON wrapper (Lebih andal menghindari blokir browser)
                         const proxyUrl1 = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
                         const response1 = await fetch(proxyUrl1);
                         if (!response1.ok) throw new Error('Proxy 1 failed');
                         const wrapperData = await response1.json();
                         data = JSON.parse(wrapperData.contents);
-                    } catch (error2) {
-                        console.log("Proxy 1 gagal, mencoba Proxy 2 (CodeTabs)...");
-                        // Percobaan 3: CodeTabs Proxy sebagai cadangan terakhir
+                    } catch (e2) {
                         const proxyUrl2 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`;
                         const response2 = await fetch(proxyUrl2);
                         if (!response2.ok) throw new Error('Semua proxy gagal');
@@ -239,35 +343,46 @@
                     }
                 }
                 
-                // Store the raw data
                 allGames = data;
                 
-                // If API returned an error object instead of an array
                 if (!data || data.status === 0 || !Array.isArray(data)) {
-                    throw new Error(data?.status_message || "Gagal mengambil data dari server.");
+                    throw new Error("Format data tidak valid dari server.");
                 }
 
                 renderGames();
 
             } catch (error) {
                 console.error("Fetch error:", error);
-                errorMessageEl.textContent = 'Gagal terhubung ke server FreeToGame. Coba muat ulang halaman, atau gunakan jaringan lain (ISP/VPN).';
+                document.getElementById('errorMessage').textContent = 'Koneksi ke server API terputus atau diblokir. Silakan coba lagi.';
                 showState('error');
             }
         }
 
         /**
-         * Filter and Render games to the DOM
+         * Filter, Sort, and Render
          */
         function renderGames() {
-            // Apply local search filtering on the currently loaded category
-            const filteredGames = allGames.filter(game => {
-                const matchesSearch = game.title.toLowerCase().includes(searchQuery) || 
-                                      game.short_description.toLowerCase().includes(searchQuery);
-                return matchesSearch;
+            // 1. Filter Dataset (All vs Favorites)
+            let dataset = isShowingFavorites 
+                ? allGames.filter(g => favoriteIds.includes(g.id))
+                : allGames;
+
+            // 2. Filter Search
+            let filteredGames = dataset.filter(game => {
+                return game.title.toLowerCase().includes(searchQuery) || 
+                       game.short_description.toLowerCase().includes(searchQuery);
             });
 
-            // Clear current grid
+            // 3. Sort Games
+            if (currentSort === 'az') {
+                filteredGames.sort((a, b) => a.title.localeCompare(b.title));
+            } else if (currentSort === 'za') {
+                filteredGames.sort((a, b) => b.title.localeCompare(a.title));
+            } else if (currentSort === 'newest') {
+                // FreeToGame has release_date format YYYY-MM-DD
+                filteredGames.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
+            }
+
             gamesGrid.innerHTML = '';
 
             if (filteredGames.length === 0) {
@@ -275,44 +390,59 @@
                 return;
             }
 
-            // Cap at 40 games for performance on initial render if just searching locally
-            const gamesToRender = filteredGames.slice(0, 40);
+            // Cap at 48 to prevent massive DOM overload, unless showing favorites
+            const limit = isShowingFavorites ? filteredGames.length : 48;
+            const gamesToRender = filteredGames.slice(0, limit);
 
             let htmlString = '';
-            gamesToRender.forEach(game => {
-                // Buat icon platform
+            gamesToRender.forEach((game, index) => {
+                // Calculate staggered delay for entrance animation
+                const animDelay = index * 50; 
+                
+                const isFav = favoriteIds.includes(game.id);
+                const heartClass = isFav ? 'fa-solid text-red-500' : 'fa-regular text-white';
+
                 let platformIcon = '<i class="fa-brands fa-windows"></i>';
                 if (game.platform.toLowerCase().includes('browser')) {
                     platformIcon = '<i class="fa-solid fa-globe"></i>';
                 }
 
-                // Bangun HTML Card
                 htmlString += `
-                    <div class="game-card bg-slate-800 rounded-xl overflow-hidden border border-slate-700 flex flex-col h-full">
-                        <!-- Image Container with fallback -->
-                        <div class="relative pt-[56.25%] overflow-hidden bg-slate-900">
+                    <div class="game-card bg-kaze-card rounded-2xl overflow-hidden border border-slate-700/50 flex flex-col h-full animate-fade-in-up group" 
+                         style="animation-delay: ${animDelay}ms"
+                         onclick="openModal(${game.id})">
+                         
+                        <!-- Image Area -->
+                        <div class="card-image-wrapper relative pt-[56.25%] overflow-hidden bg-slate-900">
                             <img src="${game.thumbnail}" alt="${game.title}" 
                                 class="absolute top-0 left-0 w-full h-full object-cover"
-                                onerror="this.onerror=null; this.src='https://placehold.co/600x400/1e293b/3b82f6?text=No+Image';">
-                            <div class="absolute top-2 right-2 bg-kaze-dark bg-opacity-80 backdrop-blur-sm text-xs px-2 py-1 rounded text-white font-semibold">
+                                loading="lazy"
+                                onerror="this.onerror=null; this.src='https://placehold.co/600x400/1e293b/3b82f6?text=Image+Error';">
+                            
+                            <!-- Badges -->
+                            <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-xs px-2.5 py-1 rounded-md text-white font-semibold border border-white/10">
                                 ${game.genre}
                             </div>
+                            
+                            <!-- Favorite Button (Stop propagation to avoid opening modal) -->
+                            <button onclick="event.stopPropagation(); toggleFavorite(${game.id})" 
+                                class="absolute top-3 right-3 w-8 h-8 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center hover:scale-110 transition-transform border border-white/10 z-10">
+                                <i class="fa-heart ${heartClass} transition-colors duration-300" id="heart-icon-${game.id}"></i>
+                            </button>
                         </div>
                         
-                        <!-- Content -->
-                        <div class="p-5 flex-grow flex flex-col">
-                            <h3 class="text-xl font-bold text-white mb-2 line-clamp-1" title="${game.title}">${game.title}</h3>
+                        <!-- Content Area -->
+                        <div class="p-5 flex-grow flex flex-col relative z-20 bg-kaze-card">
+                            <h3 class="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-kaze-accent transition-colors">${game.title}</h3>
                             <p class="text-slate-400 text-sm mb-4 line-clamp-2 flex-grow">${game.short_description}</p>
                             
-                            <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-700">
-                                <div class="text-slate-300 text-sm flex items-center gap-2" title="Platform: ${game.platform}">
-                                    ${platformIcon}
+                            <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-700/50">
+                                <div class="text-slate-300 text-sm flex items-center gap-2 bg-slate-800/50 px-2 py-1 rounded-md" title="Platform: ${game.platform}">
+                                    ${platformIcon} <span class="text-xs opacity-70">${game.platform.split(' ')[0]}</span>
                                 </div>
-                                <a href="${game.game_url}" target="_blank" rel="noopener noreferrer" 
-                                    class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-kaze-accent text-white text-sm font-medium rounded-lg transition-colors duration-300">
-                                    <span>Mainkan</span>
-                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                                </a>
+                                <span class="text-kaze-accent text-sm font-semibold group-hover:translate-x-1 transition-transform">
+                                    Detail <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -324,7 +454,167 @@
         }
 
         /**
-         * Helper to manage UI states
+         * Toggle Favorite status
+         */
+        function toggleFavorite(id) {
+            const index = favoriteIds.indexOf(id);
+            const iconEl = document.getElementById(`heart-icon-${id}`);
+            
+            if (index === -1) {
+                // Add to favorites
+                favoriteIds.push(id);
+                if (iconEl) {
+                    iconEl.classList.remove('fa-regular', 'text-white');
+                    iconEl.classList.add('fa-solid', 'text-red-500');
+                    // Add pop animation
+                    iconEl.style.transform = 'scale(1.3)';
+                    setTimeout(() => iconEl.style.transform = 'scale(1)', 200);
+                }
+            } else {
+                // Remove from favorites
+                favoriteIds.splice(index, 1);
+                if (iconEl) {
+                    iconEl.classList.remove('fa-solid', 'text-red-500');
+                    iconEl.classList.add('fa-regular', 'text-white');
+                }
+                
+                // If currently in favorites view, re-render to remove it from screen
+                if (isShowingFavorites) {
+                    renderGames();
+                }
+            }
+            
+            // Save and update counter
+            localStorage.setItem('kaze_favorites_v2', JSON.stringify(favoriteIds));
+            updateFavCount();
+        }
+
+        function updateFavCount() {
+            favCount.textContent = favoriteIds.length;
+        }
+
+        function toggleViewFavorites() {
+            isShowingFavorites = !isShowingFavorites;
+            const btn = document.getElementById('favToggleBtn');
+            
+            if (isShowingFavorites) {
+                btn.classList.add('bg-red-500/20', 'border-red-500/50');
+                btn.classList.remove('bg-slate-800', 'border-slate-700');
+                pageTitle.textContent = "Game Favorit Anda";
+                controlsContainer.classList.add('hidden'); // Hide filters when in favorites
+                
+                // If we don't have games loaded yet (user clicked instantly), fetch them
+                if (allGames.length === 0) {
+                    fetchGames('all');
+                } else {
+                    renderGames();
+                }
+            } else {
+                resetToHome();
+            }
+        }
+
+        function resetToHome() {
+            isShowingFavorites = false;
+            const btn = document.getElementById('favToggleBtn');
+            btn.classList.remove('bg-red-500/20', 'border-red-500/50');
+            btn.classList.add('bg-slate-800', 'border-slate-700');
+            pageTitle.textContent = "Temukan Game Gratis Terbaik";
+            controlsContainer.classList.remove('hidden');
+            
+            // Reset filters to visual defaults
+            searchInput.value = '';
+            categoryFilter.value = 'all';
+            sortFilter.value = 'relevance';
+            
+            searchQuery = '';
+            currentCategory = 'all';
+            currentSort = 'relevance';
+            
+            fetchGames('all');
+        }
+
+        /**
+         * Modal Logic
+         */
+        function openModal(id) {
+            const game = allGames.find(g => g.id === id);
+            if (!game) return;
+
+            // Format date if valid
+            let dateStr = "TBA";
+            if (game.release_date && game.release_date !== "0000-00-00") {
+                const d = new Date(game.release_date);
+                dateStr = d.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+
+            modalContentBody.innerHTML = `
+                <!-- Left Image Cover -->
+                <div class="md:w-5/12 bg-slate-900 relative">
+                    <img src="${game.thumbnail}" alt="${game.title}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-slate-800 via-transparent to-transparent"></div>
+                </div>
+                
+                <!-- Right Content -->
+                <div class="md:w-7/12 p-6 md:p-8 flex flex-col">
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-3xl font-bold text-white pr-8">${game.title}</h2>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <span class="px-3 py-1 bg-kaze-accent/20 text-kaze-accent text-xs font-bold rounded border border-kaze-accent/30">${game.genre}</span>
+                        <span class="px-3 py-1 bg-slate-700 text-slate-300 text-xs font-bold rounded">${game.platform}</span>
+                    </div>
+                    
+                    <p class="text-slate-300 text-sm leading-relaxed mb-6 flex-grow">${game.short_description}</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm mb-8 bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                        <div>
+                            <span class="block text-slate-500 text-xs uppercase tracking-wider mb-1">Developer</span>
+                            <span class="text-white font-medium">${game.developer}</span>
+                        </div>
+                        <div>
+                            <span class="block text-slate-500 text-xs uppercase tracking-wider mb-1">Publisher</span>
+                            <span class="text-white font-medium">${game.publisher}</span>
+                        </div>
+                        <div class="col-span-2 mt-2">
+                            <span class="block text-slate-500 text-xs uppercase tracking-wider mb-1">Tanggal Rilis</span>
+                            <span class="text-white font-medium">${dateStr}</span>
+                        </div>
+                    </div>
+                    
+                    <a href="${game.game_url}" target="_blank" rel="noopener noreferrer" 
+                        class="w-full py-3.5 bg-gradient-to-r from-kaze-accent to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]">
+                        <span>Mainkan Sekarang (Resmi)</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                </div>
+            `;
+
+            gameModal.classList.remove('hidden');
+            // Trigger reflow for animation
+            void gameModal.offsetWidth;
+            gameModal.classList.add('modal-enter');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeModal() {
+            gameModal.classList.remove('modal-enter');
+            setTimeout(() => {
+                gameModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 300); // Wait for transition
+        }
+
+        // Close modal when clicking outside
+        gameModal.addEventListener('click', (e) => {
+            if (e.target === gameModal) {
+                closeModal();
+            }
+        });
+
+        /**
+         * State Manager
          */
         function showState(state) {
             loadingState.classList.add('hidden');
@@ -339,7 +629,7 @@
         }
 
         /**
-         * Debounce function to delay search execution while typing
+         * Debounce Utility
          */
         function debounce(func, delay) {
             let timeoutId;
@@ -352,25 +642,26 @@
         }
 
         // Event Listeners
-        
-        // Search Input (Local filter)
         const handleSearch = debounce((e) => {
             searchQuery = e.target.value.toLowerCase().trim();
-            // Don't refetch from API, just filter existing array
             renderGames(); 
-        }, 300);
+        }, 400);
+        
         searchInput.addEventListener('input', handleSearch);
 
-        // Category Filter (Requires API refetch)
         categoryFilter.addEventListener('change', (e) => {
-            currentFilter = e.target.value;
-            // Clear search when changing category to avoid confusion
+            currentCategory = e.target.value;
             searchInput.value = '';
             searchQuery = '';
-            fetchGames(currentFilter);
+            fetchGames(currentCategory);
         });
 
-        // Initialize App on load
+        sortFilter.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            renderGames();
+        });
+
+        // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
             fetchGames('all');
         });
